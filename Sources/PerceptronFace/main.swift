@@ -111,8 +111,7 @@ func trainPerceptron(epochs: Int = 200, minAge: Int = 25, maxAge: Int = 35) {
     printSeparator()
     print("\nStep 3: Initializing Perceptron...")
     print("Input size: 400 (20x20 pixels)")
-    print("Learning rate: 0.01")
-    var perceptron = Perceptron(inputSize: 400, learningRate: 0.01)
+    var perceptron = Perceptron(inputSize: 400)
 
     // Save and visualize initial weights
     let initialWeights = perceptron.weights
@@ -133,7 +132,10 @@ func trainPerceptron(epochs: Int = 200, minAge: Int = 25, maxAge: Int = 35) {
     printSeparator()
     print("\nStep 4: Training Phase")
     printSeparator()
-    perceptron.train(inputs: trainData.features, labels: trainData.labels, epochs: epochs)
+
+    // Convert to dataset format: [([Double], Int)]
+    let combinedDataset = zip(trainData.features, trainData.labels).map { ($0, $1) }
+    perceptron.train(dataset: combinedDataset, epochs: epochs)
 
     // Visualize and save final weights
     let finalWeights = perceptron.weights

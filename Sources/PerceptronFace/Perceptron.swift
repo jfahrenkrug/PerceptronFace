@@ -9,18 +9,15 @@
 import Foundation
 
 struct Perceptron: Codable {
-    var weights: [Double]  // Made non-private for visualization
+    var weights: [Double]
     var bias: Double
-    private let learningRate: Double
 
-    init(inputSize: Int, learningRate: Double = 0.01) {
-        self.learningRate = learningRate
+    init(inputSize: Int) {
         self.weights = (0..<inputSize).map { _ in Double.random(in: -0.5...0.5) }
         self.bias = Double.random(in: -0.5...0.5)
     }
 
     init(from weights: [Double], bias: Double) {
-        self.learningRate = 0.01  // Default for loaded weights
         self.weights = weights
         self.bias = bias
     }
@@ -36,7 +33,11 @@ struct Perceptron: Codable {
         return activate(weightedSum)
     }
 
-    mutating func train(inputs: [[Double]], labels: [Int], epochs: Int) {
+    mutating func train(
+        dataset: [([Double], Int)],
+        learningRate: Double = 0.01,
+        epochs: Int
+    ) {
         print("Starting training for \(epochs) epochs...")
         print("Initial weights: \(weights.map { String(format: "%.3f", $0) })")
         print("Initial bias: \(String(format: "%.3f", bias))\n")
@@ -47,16 +48,21 @@ struct Perceptron: Codable {
         for epoch in 1...epochs {
             var totalError = 0
 
-            for (input, label) in zip(inputs, labels) {
+            for (input, label) in dataset {
                 let prediction = predict(input)
+
+                // Calculate error
                 let error = label - prediction
 
                 if error != 0 {
                     totalError += 1
 
+                    // Update weights
                     for i in 0..<weights.count {
                         weights[i] += currentLearningRate * Double(error) * input[i]
                     }
+
+                    // Update bias
                     bias += currentLearningRate * Double(error)
                 }
             }
@@ -65,7 +71,7 @@ struct Perceptron: Codable {
             currentLearningRate *= decayRate
 
             if epoch % 10 == 0 || epoch == 1 || totalError == 0 {
-                let accuracy = Double(inputs.count - totalError) / Double(inputs.count) * 100
+                let accuracy = Double(dataset.count - totalError) / Double(dataset.count) * 100
                 print("Epoch \(epoch): Errors = \(totalError), Accuracy = \(String(format: "%.1f", accuracy))%, LR = \(String(format: "%.6f", currentLearningRate))")
 
                 if totalError == 0 {
@@ -79,40 +85,4 @@ struct Perceptron: Codable {
         print("Final bias: \(String(format: "%.3f", bias))")
     }
 
-    func evaluate(inputs: [[Double]], labels: [Int]) -> Double {
-        var correct = 0
-
-        for (input, label) in zip(inputs, labels) {
-            if predict(input) == label {
-                correct += 1
-            }
-        }
-
-        return Double(correct) / Double(inputs.count) * 100
-    }
-
-    func saveWeights(to path: String) throws {
-        let weightsData = [
-            "weights": weights,
-            "bias": bias
-        ] as [String: Any]
-
-        let jsonData = try JSONSerialization.data(withJSONObject: weightsData, options: .prettyPrinted)
-        let url = URL(fileURLWithPath: path)
-        try jsonData.write(to: url)
-        print("Weights saved to: \(path)")
-    }
-
-    static func loadWeights(from path: String) throws -> Perceptron {
-        let url = URL(fileURLWithPath: path)
-        let jsonData = try Data(contentsOf: url)
-        let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as! [String: Any]
-
-        guard let weights = json["weights"] as? [Double],
-              let bias = json["bias"] as? Double else {
-            throw NSError(domain: "Perceptron", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid weights file format"])
-        }
-
-        return Perceptron(from: weights, bias: bias)
-    }
 }
