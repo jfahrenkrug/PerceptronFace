@@ -1,3 +1,11 @@
+//
+//  main.swift
+//  PerceptronFace
+//
+//  Created by Johannes Fahrenkrug on 18.09.25.
+//  https://springenwerk.com
+//
+
 import Foundation
 
 func visualizeImage(_ image: FaceImage, prediction: Int? = nil) {
