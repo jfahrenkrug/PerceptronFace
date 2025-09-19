@@ -16,6 +16,14 @@ let package = Package(
         .executableTarget(
             name: "PerceptronFace",
             path: "Sources/PerceptronFace"
+        ),
+        .testTarget(
+            name: "PerceptronFaceTests",
+            dependencies: ["PerceptronFace"],
+            path: "Tests/PerceptronFaceTests",
+            resources: [
+                .copy("Fixtures")
+            ]
         )
     ]
 )
