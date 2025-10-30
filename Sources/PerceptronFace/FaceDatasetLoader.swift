@@ -190,6 +190,7 @@ class FaceDatasetLoader {
             print("Processing \(files.count) UTKFace images...")
 
             var processedCount = 0
+            var reusedProcessedCount = 0
             var skippedCount = 0
             for (_, fileURL) in files.enumerated() {
                 let filename = fileURL.lastPathComponent
@@ -209,14 +210,29 @@ class FaceDatasetLoader {
                     continue
                 }
 
-                if let cgImage = ImageProcessor.loadImage(from: fileURL),
-                   let pixels = ImageProcessor.resizeAndConvertToGrayscale(image: cgImage, size: 20) {
+                let processedFilename = "processed_\(filename)"
+                let processedURL = processedPath.appendingPathComponent(processedFilename)
 
-                    // Save the processed 20x20 image
-                    let processedFilename = "processed_\(filename)"
-                    let processedURL = processedPath.appendingPathComponent(processedFilename)
-                    ImageProcessor.saveImage(pixels: pixels, size: 20, to: processedURL)
+                var pixels: [Double]? = nil
 
+                if FileManager.default.fileExists(atPath: processedURL.path) {
+                    if let cgImage = ImageProcessor.loadImage(from: processedURL),
+                       let cachedPixels = ImageProcessor.resizeAndConvertToGrayscale(image: cgImage, size: 20) {
+                        pixels = cachedPixels
+                        reusedProcessedCount += 1
+                    } else {
+                        try? FileManager.default.removeItem(at: processedURL)
+                    }
+                }
+
+                if pixels == nil,
+                   let cgImage = ImageProcessor.loadImage(from: fileURL),
+                   let freshPixels = ImageProcessor.resizeAndConvertToGrayscale(image: cgImage, size: 20) {
+                    pixels = freshPixels
+                    ImageProcessor.saveImage(pixels: freshPixels, size: 20, to: processedURL)
+                }
+
+                if let pixels {
                     images.append(FaceImage(
                         pixels: pixels,
                         isFemale: gender == 1,
@@ -232,6 +248,9 @@ class FaceDatasetLoader {
             }
 
             print("Successfully processed \(processedCount) UTKFace images!")
+            if reusedProcessedCount > 0 {
+                print("Reused cached processed images: \(reusedProcessedCount)")
+            }
             print("Skipped \(skippedCount) images outside age range \(minAge)-\(maxAge)")
 
         } catch {
