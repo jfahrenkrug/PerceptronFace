@@ -27,9 +27,10 @@ struct Perceptron: Codable {
     }
 
     func predict(_ inputs: [Double]) -> Int {
-        let weightedSum = zip(inputs, weights)
-            .map { $0 * $1 }
-            .reduce(0, +) + bias
+        var weightedSum = bias
+        for idx in 0..<weights.count {
+            weightedSum += weights[idx] * inputs[idx]
+        }
         return activate(weightedSum)
     }
 

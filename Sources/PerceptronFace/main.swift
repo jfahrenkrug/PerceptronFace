@@ -135,7 +135,10 @@ func trainPerceptron(epochs: Int = 200, minAge: Int = 25, maxAge: Int = 35) {
 
     // Convert to dataset format: [([Double], Int)]
     let combinedDataset = zip(trainData.features, trainData.labels).map { ($0, $1) }
+    let trainingStart = Date()
     perceptron.train(dataset: combinedDataset, epochs: epochs)
+    let trainingDuration = Date().timeIntervalSince(trainingStart)
+    print("Training time: \(String(format: "%.2f", trainingDuration)) seconds")
 
     // Visualize and save final weights
     let finalWeights = perceptron.weights
